@@ -15,7 +15,8 @@ use Doctrine\Common\Annotations\Annotation\Target;
  * @Annotation
  * @Target("PROPERTY")
  * @Attributes({
- *     @Attribute("message", type="string")
+ *     @Attribute("message", type="string"),
+ *     @Attribute("nullable", type="bool"),
  * })
  */
 class IsFloat extends Type
@@ -37,12 +38,16 @@ class IsFloat extends Type
      */
     public function __construct(array $values)
     {
+        parent::__construct($values);
+
         if (isset($values['value'])) {
             $this->message = $values['value'];
         }
+
         if (isset($values['message'])) {
             $this->message = $values['message'];
         }
+
         if (isset($values['name'])) {
             $this->name = $values['name'];
         }

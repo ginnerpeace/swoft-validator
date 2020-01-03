@@ -32,14 +32,18 @@ class IsIntRule implements RuleInterface
         /* @var IsInt $item */
         $message = $item->getMessage();
 
-        if (!isset($data[$propertyName]) && $default !== null) {
-            $data[$propertyName] = (int)$default;
+        if (! isset($data[$propertyName]) && $default !== null) {
+            $data[$propertyName] = (int) $default;
             return $data;
         }
 
-        if (!isset($data[$propertyName]) && $default === null) {
-            $message = (empty($message)) ? sprintf('%s must exist!', $propertyName) : $message;
-            throw new ValidatorException($message);
+        if (! isset($data[$propertyName])) {
+            if ($item->isNullable()) {
+                return $data;
+            } elseif ($default === null) {
+                $message = (empty($message)) ? sprintf('%s must exist!', $propertyName) : $message;
+                throw new ValidatorException($message);
+            }
         }
 
         $value = $data[$propertyName];
