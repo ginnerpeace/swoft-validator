@@ -2,7 +2,6 @@
 
 namespace Swoft\Validator\Rule;
 
-use DateTime;
 use Swoft\Bean\Annotation\Mapping\Bean;
 use Swoft\Validator\Annotation\Mapping\Date;
 use Swoft\Validator\Contract\RuleInterface;
@@ -28,24 +27,44 @@ class DateRule implements RuleInterface
      */
     public function validate(array $data, string $propertyName, $item, $default = null, $strict = false): array
     {
+        /* @var Date $item */
+        $format = $item->getFormat();
+
         $value = $data[$propertyName];
-        if (is_string($value)) {
-            $dt = DateTime::createFromFormat("Y-m-d H:i:s", $value);
-            if ($dt !== false && !array_sum($dt::getLastErrors())) {
+
+        if (! empty($format)) {
+            $parsed = date_parse_from_format($format, $value);
+
+            if ($parsed['error_count'] === 0 && $parsed['warning_count'] === 0) {
                 return $data;
-            } elseif (ctype_digit($value)) {
-                if (date('Y-m-d', (int)$value)) {
-                    return $data;
-                }
+            }
+        } elseif (is_string($value)) {
+            $parsed = date_parse($value);
+
+            if (checkdate($parsed['month'], $parsed['day'], $parsed['year'])) {
+                return $data;
             }
         } elseif (filter_var($value, FILTER_VALIDATE_INT)) {
-            if ($value >= PHP_INT_MIN && $value <= PHP_INT_MAX) {
+            // Between 1970-01-01 00:00:00 and 9999-12-31 23:59:59
+            if ($value >= -28800 && $value <= 253402271999) {
                 return $data;
             }
         }
+
+        if (empty($format)) {
+            $message = $item->getMessage();
+            if (empty($message)) {
+                $message = sprintf('The %s is not a valid date.', $propertyName);
+            }
+        } else {
+            $message = sprintf(
+                'The %s does not match the format %s.',
+                $propertyName,
+                $format
+            );
+        }
+
         /* @var Date $item */
-        $message = $item->getMessage();
-        $message = (empty($message)) ? sprintf('%s must date!', $propertyName) : $message;
         throw new ValidatorException($message);
     }
 }
